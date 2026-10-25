@@ -1,0 +1,64 @@
+# ===== Tajne i konfiguracija =====
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets/
+
+# ===== Node / JavaScript / TypeScript =====
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.npm/
+.yarn/
+.pnpm-store/
+dist/
+build/
+out/
+.next/
+.nuxt/
+.vite/
+.cache/
+.parcel-cache/
+coverage/
+*.tsbuildinfo
+
+# ===== Python =====
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+.coverage
+htmlcov/
+
+# ===== Baze podataka (lokalne) =====
+*.sqlite
+*.sqlite3
+*.db
+
+# ===== Logovi =====
+logs/
+*.log
+
+# ===== IDE i editori =====
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ===== Operativni sistemi =====
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ===== Docker =====
+docker-compose.override.yml
