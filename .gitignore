@@ -62,3 +62,6 @@ desktop.ini
 
 # ===== Docker =====
 docker-compose.override.yml
+
+# ===== Windows metapodaci (preuzeti fajlovi) =====
+*:Zone.Identifier
