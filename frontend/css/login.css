@@ -1,0 +1,67 @@
+/* Stranica za prijavu (prema docs/design/login/login.css) */
+*{box-sizing:border-box}
+:root{--bg:#f3f1e9;--surface:#fffefa;--ink:#202a2d;--muted:#6b7570;--line:#e8e5dc;--field:#bdb8aa;--faint:#8c938e;--orange:#f47732;--glow:#ffe4d0;--bad:#c53030;--ok:#1a8a5c;--g-bg:#fff;--g-ink:#202a2d;--g-line:#e0dcd0;--chip:rgba(255,254,250,.85);color-scheme:light;font-family:"DM Sans",sans-serif}
+html[data-theme="dark"]{--bg:#0a0e16;--surface:#111723;--ink:#e7ebf3;--muted:#8791a6;--line:#222b3d;--field:#2e394f;--faint:#6c7690;--glow:#18223b;--bad:#f87171;--ok:#34d399;--g-bg:#fff;--g-ink:#1f2430;--g-line:#fff;--chip:rgba(17,23,35,.7);color-scheme:dark}
+body{margin:0;background:var(--bg);color:var(--ink);font-size:14px}
+button,input{font:inherit}button{cursor:pointer}
+a{color:var(--ink)}
+:focus-visible{outline:2px solid var(--orange);outline-offset:3px;border-radius:4px}
+
+.login-shell{position:relative;min-height:100vh;display:grid;grid-template-columns:minmax(380px,5fr) 7fr;background:radial-gradient(42% 62% at 70% 50%,var(--glow) 0,transparent 72%),var(--bg);overflow:hidden}
+.login-side{position:relative;z-index:1;padding:32px 56px;display:flex;flex-direction:column}
+.brand{display:flex;align-items:center;gap:11px;text-decoration:none;font:800 13px Manrope,sans-serif;letter-spacing:.22em;text-transform:uppercase}
+.brand-mark{width:34px;height:34px;color:var(--orange);display:block}.brand-mark svg{width:100%;height:100%}
+.theme-toggle{position:absolute;top:24px;right:28px;z-index:2;display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 16px;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--ink);font-weight:600;font-size:13px}
+.theme-toggle:hover{border-color:var(--orange)}
+
+.login-form{margin:auto;width:100%;max-width:370px;padding:36px 0}
+h1{font:800 32px Manrope,sans-serif;letter-spacing:.05em;margin:0 0 8px}
+.sub{color:var(--muted);margin:0 0 28px;letter-spacing:.03em}
+
+.btn-google{width:100%;height:48px;border:1px solid var(--g-line);border-radius:12px;background:var(--g-bg);color:var(--g-ink);font-weight:600;display:flex;align-items:center;justify-content:center;gap:10px}
+.btn-google:hover{filter:brightness(.96)}
+.or{display:flex;align-items:center;gap:14px;margin:24px 0 6px;color:var(--muted);font-size:12px}
+.or:before,.or:after{content:"";height:1px;flex:1;background:var(--field)}
+
+.field{margin-top:18px}
+.field label{display:block;font-size:12px;color:var(--muted);letter-spacing:.06em;margin-bottom:2px}
+.field input{width:100%;height:44px;border:0;border-bottom:1px solid var(--field);background:transparent;color:var(--ink);padding:0;border-radius:0;transition:border-color .2s}
+.field input::placeholder{color:var(--faint)}
+.field input:focus{outline:0;border-bottom-color:var(--orange)}
+.field input[aria-invalid="true"]{border-bottom-color:var(--bad)}
+.pw{display:flex;align-items:center;gap:8px}
+.pw button{border:0;background:transparent;color:var(--muted);font-size:12px;font-weight:600;min-height:44px;padding:0 4px}
+.pw button:hover{color:var(--ink)}
+
+.row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:20px 0 6px;font-size:12px}
+.check{display:flex;align-items:center;gap:8px;min-height:32px}
+.check input{width:16px;height:16px;accent-color:var(--orange);margin:0}
+.row a{color:var(--muted)}.row a:hover{color:var(--ink)}
+.msg{min-height:20px;margin:6px 0 10px;font-size:12px;color:var(--bad)}.msg.ok{color:var(--ok)}
+
+.btn-primary{width:100%;height:48px;border:0;border-radius:12px;background:var(--orange);color:#1b1308;font-weight:800;letter-spacing:.02em;transition:filter .2s,transform .2s}
+.btn-primary:hover{filter:brightness(1.06);transform:translateY(-1px)}
+.btn-primary:disabled{opacity:.6;cursor:default;transform:none}
+.foot{text-align:center;color:var(--muted);font-size:12px;margin:22px 0 0}.foot a{color:var(--ink)}
+
+.login-visual{position:absolute;inset:0;pointer-events:none}
+.login-visual canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.tagline{position:absolute;right:190px;bottom:36px;margin:0;font:700 12px Manrope,sans-serif;letter-spacing:.22em;text-transform:uppercase;color:var(--muted)}
+.motion-toggle{pointer-events:auto;position:absolute;right:28px;bottom:24px;min-height:44px;padding:0 16px;border:1px solid var(--line);border-radius:12px;background:var(--chip);color:var(--muted);font-size:12px;font-weight:600}
+.motion-toggle:hover{color:var(--ink);border-color:var(--orange)}
+
+@media(max-width:900px){.login-shell{grid-template-columns:1fr}.login-visual{display:none}.login-side{min-height:100vh;padding:24px}.theme-toggle{top:16px;right:16px}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+
+/* ---------- Dodaci: jezik, registracija, demo nalozi ---------- */
+.login-controls{position:absolute;top:24px;right:28px;z-index:2;display:flex;gap:8px}
+.login-controls .theme-toggle{position:static}
+.lang-select{min-height:44px;padding:0 12px;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--ink);font-weight:600;font-size:13px}
+.lang-select:hover{border-color:var(--orange)}
+.hidden{display:none!important}
+.link-btn{background:none;border:0;padding:0;color:var(--ink);text-decoration:underline;font:inherit;cursor:pointer}
+.row .link-btn{color:var(--muted)}.row .link-btn:hover{color:var(--ink)}
+.demo-hint{margin-top:22px;padding:12px 14px;border:1px dashed var(--line);border-radius:12px;font-size:12px;color:var(--muted);line-height:1.8}
+.demo-hint button{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:8px;padding:2px 8px;margin:2px 4px 0 0;font-size:12px}
+.demo-hint button:hover{border-color:var(--orange)}
+@media(max-width:900px){.login-controls{top:16px;right:16px}.login-side{padding-top:80px}}
