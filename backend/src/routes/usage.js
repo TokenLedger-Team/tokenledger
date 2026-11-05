@@ -54,6 +54,7 @@ router.post("/usage/import", requireRole("admin", "lead"), (req, res) => {
       imported++;
     });
     touched.forEach(refreshTeamCatalog);
+    db.prepare("INSERT INTO org_settings (org_id, last_import_at) VALUES (?, ?) ON CONFLICT(org_id) DO UPDATE SET last_import_at = excluded.last_import_at").run(orgId, new Date().toISOString());
   })();
 
   res.status(201).json({ imported, skipped: errors.length, errors: errors.slice(0, 20) });
