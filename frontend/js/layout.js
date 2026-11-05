@@ -18,7 +18,6 @@ export const PAGES = {
   prices: { href: "prices.html", icon: "$" },
 };
 
-const BRAND_SVG = `<svg viewBox="0 0 40 40" aria-hidden="true"><path d="M20 2 36 11v18L20 38 4 29V11z" fill="currentColor" opacity=".17"/><path d="M20 2 36 11 20 20 4 11zM4 11v18l16 9V20zM36 11v18l-16 9V20z" fill="currentColor"/><path d="m20 2 0 18 16-9z" fill="#fff" opacity=".24"/></svg>`;
 const PROVIDER_LOGO = { openai: "✳", anthropic: "✺", google: "G", azure: "A" };
 
 /**
@@ -119,7 +118,7 @@ function renderSidebar(user, active, shared) {
     .join("");
   const proxy = shared.proxy;
   el.innerHTML = `
-    <a class="brand" href="index.html" aria-label="Token Ledger"><span class="brand-mark">${BRAND_SVG}</span><span>Token Ledger</span></a>
+    <a class="brand" href="index.html" aria-label="Token Ledger"><img class="brand-logo" src="img/logo.svg" alt="Token Ledger"></a>
     <div class="nav-label">${t("nav.modules")}</div>
     <nav class="nav" aria-label="${t("nav.modules")}">${nav}</nav>
     ${providers ? `<div class="sidebar-divider"></div><div class="nav-label">${t("nav.providers")}</div>${providers}` : ""}
