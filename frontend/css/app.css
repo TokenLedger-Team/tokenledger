@@ -312,6 +312,23 @@ html[data-theme="dark"] .provider-logo{filter:saturate(1.2) brightness(.8)}
 .ck{color:var(--orange);font-weight:700}
 .tagleg{margin-top:12px}
 
+/* Proxy ključevi i uputstvo za povezivanje */
+.views code{font:13px/1.5 ui-monospace,monospace;background:var(--surface-2);border:1px solid var(--line);border-radius:6px;padding:1px 6px;overflow-wrap:anywhere}
+pre.vcode{margin:0}
+pre.vcode code{background:none;border:0;padding:0;font:inherit}
+.cfg-top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:10px 0 6px}
+.cfg-team{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted)}
+.key-dialog{width:min(560px,calc(100vw - 32px));border:1px solid var(--line);border-radius:20px;background:var(--surface);color:var(--ink);padding:26px;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+.key-dialog::backdrop{background:rgba(10,14,22,.55)}
+.key-dialog h2{font:800 20px Manrope,sans-serif;margin:0}
+.key-box{display:flex;gap:8px;margin-top:14px}
+.key-box input{flex:1;min-width:0;height:42px;border:1px solid var(--line);background:var(--surface-2);color:var(--ink);border-radius:10px;padding:0 12px;font:13px ui-monospace,monospace}
+.key-warning{margin:14px 0 0;padding:10px 12px;border-radius:10px;background:color-mix(in srgb,var(--warn) 16%,transparent);color:var(--ink);font-size:13px}
+.empty-state{grid-column:span 12;text-align:center;padding:56px 24px!important}
+.empty-state .rec-icon{margin:0 auto 14px}
+.empty-state h2{font:800 22px Manrope,sans-serif;margin:0 0 8px;letter-spacing:-.4px}
+.empty-state p{color:var(--muted);font-size:14px;margin:0 auto 20px;max-width:460px;line-height:1.6}
+
 /* Prices */
 .pm{display:flex;align-items:center;gap:14px}
 .pm small{display:block;color:var(--muted);margin-top:2px}

@@ -1,6 +1,6 @@
 // Mali HTML gradivni blokovi za module (isti kao u dizajnu: kartica, red tabele, čip, prekidač).
 
-import { escapeHtml } from "./format.js";
+import { escapeHtml, toast } from "./format.js";
 import { t } from "./i18n.js";
 
 export const head = (kicker, sub) =>
@@ -30,5 +30,22 @@ export async function busy(button, fn) {
     return await fn();
   } finally {
     if (button) button.disabled = false;
+  }
+}
+
+/**
+ * Kopira tekst u clipboard. Ako browser to ne dozvoli, označi `fallbackEl`
+ * (input ili element sa tekstom) da korisnik može ručno da kopira.
+ */
+export async function copyText(text, fallbackEl) {
+  try {
+    await navigator.clipboard.writeText(text);
+    toast(t("set.copied"));
+    return true;
+  } catch {
+    if (fallbackEl?.select) fallbackEl.select();
+    else if (fallbackEl) window.getSelection()?.selectAllChildren(fallbackEl);
+    toast(t("set.copyFail"), "error");
+    return false;
   }
 }

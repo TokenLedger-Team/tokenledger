@@ -3,7 +3,7 @@
 
 import { addDays, todayISO, parseISODate } from "../format.js";
 
-export const ORG = { id: "org-1", name: "Acme Corp", proxyUrl: "https://proxy.tokenledger.example/v1" };
+export const ORG = { id: "org-1", name: "Acme Corp", proxyUrl: "http://localhost:8000/api/proxy" };
 
 export const CURRENCIES = { base: "USD", rates: { USD: 1, EUR: 0.92, RSD: 108 } };
 

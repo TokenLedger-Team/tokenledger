@@ -13,8 +13,13 @@ const ui = { timelineDate: todayISO(), showProjection: true, peak: 1, selectedMo
 startPage({
   id: "dashboard",
   usesPeriod: true,
-  async load({ period }) {
+  async load({ period, user }) {
     const { from, to, prevFrom, prevTo } = period;
+    // Prazno stanje samo ako organizacija nema NIJEDAN zapis potrošnje (gleda se ~10 godina unazad,
+    // koliko backend dozvoljava), a ne samo u izabranom periodu.
+    const allTime = await api.getSummary(addDays(todayISO(), -3650), todayISO());
+    if (!allTime.requests && !allTime.totalTokens) return { empty: true, isAdmin: user.role === "admin" };
+
     const [summary, prevSummary, series, prevSeries, byModel, byTeam, byFunction, byClient, hourly, fleet, optimization, budgets, replays, models] =
       await Promise.all([
         api.getSummary(from, to),
@@ -35,6 +40,7 @@ startPage({
     return { summary, prevSummary, series, prevSeries, byModel, byTeam, byFunction, byClient, hourly, fleet, optimization, budgets, replays, models };
   },
   render(root, d, ctx) {
+    if (d.empty) return renderEmpty(root, d.isAdmin);
     const recs = d.replays.filter((r) => r.status === "done" && r.verdict !== "dont" && r.savingsPerMonth > 0).sort((a, b) => b.savingsPerMonth - a.savingsPerMonth);
     const potential = recs.reduce((s, r) => s + r.savingsPerMonth, 0);
 
@@ -67,6 +73,16 @@ startPage({
     renderModelMap(root.querySelector("#modelMap"), d.fleet);
   },
 });
+
+// ---------- Prazno stanje (nova organizacija bez poziva) ----------
+function renderEmpty(root, isAdmin) {
+  root.innerHTML = `<section class="dashboard-grid"><article class="card empty-state">
+    <span class="rec-icon" aria-hidden="true">⌁</span>
+    <h2>${t("dash.emptyTitle")}</h2>
+    <p>${t("dash.emptyText")}</p>
+    ${isAdmin ? `<a class="vbtn" href="setup.html#povezivanje">${t("dash.emptyCta")} <span aria-hidden="true">→</span></a>` : ""}
+  </article></section>`;
+}
 
 // ---------- Brze statistike ----------
 function quickStats(d, potential) {

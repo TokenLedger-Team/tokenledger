@@ -79,6 +79,10 @@ export const getProviders = () => GET("/providers");
 export const addProviderKey = (providerId, key) => POST(`/providers/${providerId}/keys`, key); // { apiKey, environment }
 export const deleteProviderKey = (providerId, keyId) => DELETE(`/providers/${providerId}/keys/${keyId}`);
 export const getProxyStatus = () => GET("/proxy/status");
+export const getProxyKeys = () => GET("/proxy-keys");
+/** Vraća { id, name, last4, createdAt, key }; pun `key` stiže samo ovde, jednom. */
+export const createProxyKey = (name) => POST("/proxy-keys", { name });
+export const deleteProxyKey = (id) => DELETE(`/proxy-keys/${id}`);
 
 // ---------- Statistika (dashboard) ----------
 export const getSummary = (from, to) => GET("/stats/summary", { from, to });

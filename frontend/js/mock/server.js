@@ -267,6 +267,26 @@ const routes = [
     save();
     return ok(null, 204);
   } },
+  // Proxy ključevi (tl_...): pun ključ se vraća samo pri pravljenju, posle samo last4.
+  { method: "GET", path: /^\/proxy-keys$/, handler: ({ user, m }) =>
+    user.role !== "admin" ? fail(403, m.forbidden) : ok((state.proxyKeys ??= [])) },
+  { method: "POST", path: /^\/proxy-keys$/, handler: ({ user, body, m }) => {
+    if (user.role !== "admin") return fail(403, m.forbidden);
+    const name = String(body?.name || "").trim();
+    if (!name || name.length > 80) return fail(400, m.invalid);
+    const bytes = crypto.getRandomValues(new Uint8Array(24));
+    const key = "tl_" + btoa(String.fromCharCode(...bytes)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+    const view = { id: nextId("pk"), name, last4: key.slice(-4), createdAt: new Date().toISOString() };
+    (state.proxyKeys ??= []).push(view);
+    save();
+    return ok({ ...view, key }, 201);
+  } },
+  { method: "DELETE", path: /^\/proxy-keys\/([^/]+)$/, handler: ({ user, params, m }) => {
+    if (user.role !== "admin") return fail(403, m.forbidden);
+    state.proxyKeys = (state.proxyKeys ?? []).filter((k) => k.id !== params[0]);
+    save();
+    return ok(null, 204);
+  } },
   { method: "GET", path: /^\/proxy\/status$/, handler: () =>
     ok({ healthy: true, lastCallAt: new Date(Date.now() - 12000).toISOString() }) },
 
