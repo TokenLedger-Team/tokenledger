@@ -65,3 +65,4 @@ docker-compose.override.yml
 
 # ===== Windows metapodaci (preuzeti fajlovi) =====
 *:Zone.Identifier
+backend/data/
