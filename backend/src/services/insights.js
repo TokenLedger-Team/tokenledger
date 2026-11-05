@@ -42,10 +42,13 @@ function spikes(user) {
   return out;
 }
 
+// Pojedinačne greške nisu anomalija: prikazuje se tek kad ih ima ovoliko u istom satu.
+const RETRY_MIN = 5;
+
 function retries(user) {
   const lead = user.role === "lead";
   return db
-    .prepare(`SELECT e.*, t.name team_name FROM retry_events e JOIN teams t ON t.id = e.team_id WHERE e.org_id = ?${lead ? " AND e.team_id = ?" : ""}`)
+    .prepare(`SELECT e.*, t.name team_name FROM retry_events e JOIN teams t ON t.id = e.team_id WHERE e.org_id = ? AND e.failed_retries >= ${RETRY_MIN}${lead ? " AND e.team_id = ?" : ""}`)
     .all(...(lead ? [user.org_id, user.team_id ?? ""] : [user.org_id]))
     .map((e) => ({ id: e.id, type: "retry", teamId: e.team_id, teamName: e.team_name, function: e.function, client: e.client ?? null, failedRetries: e.failed_retries, hours: e.hours, detectedAt: e.detected_at }));
 }

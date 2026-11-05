@@ -28,7 +28,8 @@ API je na `http://localhost:8000/api`, dokumentacija na **http://localhost:8000/
 | `CORS_ORIGIN` | Dozvoljeni origin(i) frontenda, odvojeni zarezom (`http://localhost:5500`) |
 | `DB_PATH` | Putanja do SQLite fajla; prazno = `backend/data/tokenledger.db` |
 | `KEY_ENCRYPTION_SECRET` | Tajna za šifrovanje provajder ključeva; prazno = koristi se `JWT_SECRET` |
-| `PROXY_URL` | Adresa proxyja koja se prikazuje u uputstvu za povezivanje (`/org`) |
+| `PUBLIC_URL` | Javna adresa backenda (`http://localhost:8000`); `proxyUrl` u `/org` je `PUBLIC_URL` + `/api/proxy` |
+| `OPENAI_BASE_URL`, `ANTHROPIC_BASE_URL` | Upstream adrese proxyja (podrazumevano prave); menjaju se samo za testove |
 | `SEED_PASSWORD` | Lozinka demo naloga (podrazumevano `demo`) |
 
 `.env` i `backend/data/` se ne commit-uju.
@@ -60,7 +61,7 @@ Demo nalozi posle `npm run seed` (lozinka `demo`): `admin@firma.rs`, `lead@firma
 - Provajder ključevi se čuvaju AES-256-GCM šifrovani; API vraća samo `last4`.
 - `POST /users` prima i `password` (min. 8); bez nje korisnik ne može da se prijavi. Pozivnice emailom nisu urađene.
 - `POST /auth/forgot-password` uvek vraća `{ ok: true }`, ali email se ne šalje; zaboravljenu lozinku za sada ne može da vrati nijedna ruta. `GET /auth/google` vraća 501 (nije podešeno).
-- `/proxy/status`: proxy još ne postoji, pa je `healthy` uvek `true`, a `lastCallAt` je poslednji zapis sa izvorom `proxy`.
+- `/proxy/status`: proxy radi u istom procesu, pa je `healthy` uvek `true`, a `lastCallAt` je poslednji zapis sa izvorom `proxy`.
 - Kursevi u `/currencies` su konstante (otvoreno pitanje u API.md).
 
 ## Urađeni endpointi
@@ -75,7 +76,59 @@ Grupa 4: `POST /auth/signup`, `POST /auth/forgot-password`, `GET /auth/google` (
 
 Dodatno: `GET/PUT /alert-rules` (potrebno stranici Budžeti; `warnAtPct` utiče i na status budžeta).
 
-**Nije urađeno:** slanje emailova (pozivnice, reset lozinke), Google prijava, proxy koji sam beleži potrošnju (potrošnja se unosi CSV uvozom).
+Proxy: `POST /proxy/openai/v1/chat/completions`, `POST /proxy/openai/v1/responses`, `POST /proxy/anthropic/v1/messages`; `GET/POST /proxy-keys`, `DELETE /proxy-keys/:id`.
+
+**Nije urađeno:** slanje emailova (pozivnice, reset lozinke), Google prijava, routing pravila u proxyju (pravila se čuvaju, ali proxy ih još ne primenjuje), maskiranje ličnih podataka i brojanje ponovljenih upita (ti brojači su i dalje iz seeda).
+
+## Proxy: kako povezati agenta
+
+Umesto da aplikacija zove OpenAI/Anthropic direktno, zove naš proxy. Proxy prosleđuje zahtev provajdera sa **pravim ključem organizacije** (`production` ključ iz Podešavanja, šifrovan u bazi), vraća odgovor i status netaknute (uključujući `stream: true`) i beleži potrošnju (tokeni, model, latencija) u `usage` sa `source = 'proxy'`.
+
+1. Admin dodaje `production` ključ provajdera (Podešavanja ili `POST /providers/:id/keys`).
+2. Admin pravi proxy ključ: `POST /proxy-keys` sa `{ "name": "support-agent" }`. Ključ `tl_...` se prikazuje **samo jednom**; u bazi ostaje samo SHA-256 heš.
+3. Aplikacija šalje `Authorization: Bearer tl_...` (za Anthropic može i `x-api-key: tl_...`) i zaglavlja:
+
+| Zaglavlje | Značenje |
+|---|---|
+| `X-TL-Team` | slug tima (nepoznat ili izostavljen = tim "Unassigned") |
+| `X-TL-Function` | naziv funkcije (podrazumevano `default`) |
+| `X-TL-Client` | klijent, opciono |
+
+```bash
+curl http://localhost:8000/api/proxy/openai/v1/chat/completions \
+  -H "Authorization: Bearer tl_..." -H "X-TL-Team: support" -H "X-TL-Function: faq-answers" \
+  -H "Content-Type: application/json" \
+  -d '{"model":"gpt-4o-mini","messages":[{"role":"user","content":"zdravo"}]}'
+```
+
+Rute: `/api/proxy/openai/v1/chat/completions`, `/api/proxy/openai/v1/responses`, `/api/proxy/anthropic/v1/messages`.
+
+**SDK-ovi.** Menja se samo `base_url` i ključ, a zaglavlja idu kao `default_headers`:
+
+```python
+from openai import OpenAI
+client = OpenAI(base_url="http://localhost:8000/api/proxy/openai/v1", api_key="tl_...",
+                default_headers={"X-TL-Team": "support", "X-TL-Function": "faq-answers"})
+
+from anthropic import Anthropic   # SDK sam dodaje /v1/messages
+client = Anthropic(base_url="http://localhost:8000/api/proxy/anthropic", api_key="tl_...",
+                   default_headers={"X-TL-Team": "support", "X-TL-Function": "faq-answers"})
+```
+
+```js
+new OpenAI({ baseURL: "http://localhost:8000/api/proxy/openai/v1", apiKey: "tl_...", defaultHeaders: { "X-TL-Team": "support" } });
+new Anthropic({ baseURL: "http://localhost:8000/api/proxy/anthropic", apiKey: "tl_...", defaultHeaders: { "X-TL-Team": "support" } });
+```
+
+Šta proxy radi i ne radi:
+- **Beleženje:** jedan red u `usage` po uspešnom pozivu (datum i sat u UTC, `requests = 1`, `cost = NULL`, pa se trošak računa iz cena modela). Ime modela iz odgovora se mapira na `models.id` (datumski sufiks se ignoriše: `gpt-4o-mini-2024-07-18` → `gpt-4o-mini`). Nepoznat model se dodaje sa cenama 0 uz upozorenje u logu; cene podesi u Podešavanjima.
+- **Stream:** za OpenAI chat proxy dodaje `stream_options.include_usage = true` ako ga klijent nije postavio (klijent tada dobija i završni chunk sa `usage`). Ako klijent eksplicitno postavi `include_usage: false`, tokeni se ne mogu izmeriti i poziv se ne beleži.
+- **Neuspeli pozivi** (4xx/5xx, nedostupan provajder) se prosleđuju klijentu, ne ulaze u potrošnju, a broje se u `retry_events`; anomalija "retry" se prikazuje tek od 5 grešaka u satu za istu funkciju.
+- Tokeni su `input + output`; Anthropic cache tokeni (`cache_read`/`cache_creation`) se za sada ne računaju.
+- Bezbednost: telo zahteva i ključevi se ne loguju; limit tela 5 MB; tajmaut 120 s (kod streama važi između delova); `x-forwarded-*`, cookie i host se ne prosleđuju; upstream su samo dve adrese iz env-a. Greška pri upisu u bazu se samo loguje i ne utiče na odgovor.
+- Routing pravila (`/routing-rules`) proxy još ne primenjuje.
+
+**Test bez pravih ključeva:** `npm run proxy-test` pokreće lažni upstream (`scripts/fake-upstream.js`) i API sa privremenom bazom, pa curl-om proverava 401, upis u `usage`, stream, `/stats/summary` i `/proxy/status`.
 
 ## Replay testovi i dok nema proxyja
 

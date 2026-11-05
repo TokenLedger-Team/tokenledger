@@ -4,13 +4,14 @@ import { db } from "../db.js";
 import { HttpError } from "../i18n.js";
 import { requireRole } from "../auth.js";
 import { CURRENCIES } from "../services/currencies.js";
+import { publicProxyUrl } from "../config.js";
 import { encrypt } from "../services/crypto.js";
 
 export const router = Router();
 
 router.get("/org", (req, res) => {
   const o = db.prepare("SELECT * FROM organizations WHERE id = ?").get(req.user.org_id);
-  res.json({ id: o.id, name: o.name, proxyUrl: o.proxy_url });
+  res.json({ id: o.id, name: o.name, proxyUrl: publicProxyUrl() });
 });
 
 router.get("/currencies", (_req, res) => res.json({ ...CURRENCIES, updatedAt: new Date().toISOString() }));
@@ -55,7 +56,7 @@ router.delete("/providers/:id/keys/:keyId", requireRole("admin"), (req, res) => 
   res.status(204).end();
 });
 
-// Proxy još ne postoji kao zaseban proces: backend je "zdrav" dok radi, a lastCallAt je poslednji proxy zapis.
+// Proxy radi u istom procesu kao API: "zdrav" je dok backend radi, a lastCallAt je poslednji zapis sa izvorom proxy.
 router.get("/proxy/status", (req, res) => {
   const r = db.prepare("SELECT MAX(created_at) t FROM usage WHERE org_id = ? AND source = 'proxy'").get(req.user.org_id);
   res.json({ healthy: true, lastCallAt: r.t ? new Date(r.t).toISOString() : null });

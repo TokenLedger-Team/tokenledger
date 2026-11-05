@@ -12,7 +12,8 @@
     "start": "node src/server.js",
     "seed": "node src/seed.js",
     "reset": "node scripts/reset-db.js",
-    "sample-csv": "node scripts/sample-csv.js"
+    "sample-csv": "node scripts/sample-csv.js",
+    "proxy-test": "bash scripts/proxy-smoke.sh"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
