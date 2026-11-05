@@ -87,7 +87,7 @@ export const deleteProxyKey = (id) => DELETE(`/proxy-keys/${id}`);
 // ---------- Statistika (dashboard) ----------
 export const getSummary = (from, to) => GET("/stats/summary", { from, to });
 export const getTimeseries = (from, to) => GET("/stats/timeseries", { from, to });
-/** by: "team" | "function" | "client" | "model" */
+/** by: "team" | "function" | "client" | "model" | "source" */
 export const getBreakdown = (from, to, by) => GET("/stats/breakdown", { from, to, by });
 export const getHourly = (date) => GET("/stats/hourly", { date });
 export const getModelFleet = () => GET("/stats/models");
