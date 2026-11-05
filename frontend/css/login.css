@@ -10,7 +10,7 @@ a{color:var(--ink)}
 .login-shell{position:relative;min-height:100vh;display:grid;grid-template-columns:minmax(380px,5fr) 7fr;background:radial-gradient(42% 62% at 70% 50%,var(--glow) 0,transparent 72%),var(--bg);overflow:hidden}
 .login-side{position:relative;z-index:1;padding:32px 56px;display:flex;flex-direction:column}
 .brand{display:flex;align-items:center;gap:11px;text-decoration:none;font:800 13px Manrope,sans-serif;letter-spacing:.22em;text-transform:uppercase}
-.brand-logo{display:block;width:170px;height:auto;filter:invert(1)}html[data-theme="dark"] .brand-logo{filter:none}
+.brand-logo{display:block;width:110px;height:auto;filter:invert(1)}html[data-theme="dark"] .brand-logo{filter:none}
 .theme-toggle{position:absolute;top:24px;right:28px;z-index:2;display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 16px;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--ink);font-weight:600;font-size:13px}
 .theme-toggle:hover{border-color:var(--orange)}
 

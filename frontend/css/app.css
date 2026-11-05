@@ -43,7 +43,7 @@ button{cursor:pointer}
 .app-shell{max-width:1600px;min-height:100vh;margin:auto;padding:14px;display:grid;grid-template-columns:246px minmax(0,1fr);gap:16px}
 .sidebar{background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:23px 17px 16px;display:flex;flex-direction:column;min-height:calc(100vh - 28px);box-shadow:var(--shadow);position:sticky;top:14px;max-height:calc(100vh - 28px)}
 .brand{display:flex;align-items:center;gap:11px;text-decoration:none;color:var(--ink);font:800 21px Manrope,sans-serif;letter-spacing:-.7px;padding:0 4px 31px;white-space:nowrap}
-.brand{justify-content:center}.brand-logo{display:block;width:100%;max-width:190px;height:auto;filter:invert(1)}html[data-theme="dark"] .brand-logo{filter:none}
+.brand{justify-content:center}.brand-logo{display:block;width:100%;max-width:120px;height:auto;filter:invert(1)}html[data-theme="dark"] .brand-logo{filter:none}
 .nav-label,.eyebrow,.card-kicker{font-size:10px;font-weight:700;letter-spacing:1.1px;color:var(--faint);text-transform:uppercase}
 .nav-label{padding:0 12px 10px}
 .nav{display:grid;gap:5px}
@@ -357,7 +357,7 @@ pre.vcode code{background:none;border:0;padding:0;font:inherit}
 @media(max-width:900px){
   .app-shell{display:block;padding:10px}
   .sidebar{position:static;min-height:0;max-height:none;margin-bottom:15px;padding:12px 14px;display:block}
-  .brand{padding:0 0 12px}.brand-logo{max-width:120px}
+  .brand{padding:0 0 12px}.brand-logo{max-width:90px}
   .nav-label,.sidebar-divider,.sidebar-bottom,.provider{display:none}
   .nav{display:flex;overflow:auto;gap:5px}
   .nav-item{white-space:nowrap;padding:9px 11px}
