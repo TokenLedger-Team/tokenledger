@@ -20,7 +20,7 @@ startPage({
     const allTime = await api.getSummary(addDays(todayISO(), -3650), todayISO());
     if (!allTime.requests && !allTime.totalTokens) return { empty: true, isAdmin: user.role === "admin" };
 
-    const [summary, prevSummary, series, prevSeries, byModel, byTeam, byFunction, byClient, hourly, fleet, optimization, budgets, replays, models] =
+    const [summary, prevSummary, series, prevSeries, byModel, byTeam, byFunction, byClient, bySource, hourly, fleet, optimization, budgets, replays, models] =
       await Promise.all([
         api.getSummary(from, to),
         api.getSummary(prevFrom, prevTo),
@@ -30,6 +30,7 @@ startPage({
         api.getBreakdown(from, to, "team"),
         api.getBreakdown(from, to, "function"),
         api.getBreakdown(from, to, "client"),
+        api.getBreakdown(from, to, "source"),
         api.getHourly(ui.timelineDate),
         api.getModelFleet(),
         api.getOptimization(from, to),
@@ -37,7 +38,7 @@ startPage({
         api.getReplays(),
         api.getModels(),
       ]);
-    return { summary, prevSummary, series, prevSeries, byModel, byTeam, byFunction, byClient, hourly, fleet, optimization, budgets, replays, models };
+    return { summary, prevSummary, series, prevSeries, byModel, byTeam, byFunction, byClient, bySource, hourly, fleet, optimization, budgets, replays, models };
   },
   render(root, d, ctx) {
     if (d.empty) return renderEmpty(root, d.isAdmin);
@@ -226,6 +227,7 @@ function breakdownCard(d) {
       ${column(t("dash.byTeam"), d.byTeam, (i) => i.label)}
       ${column(t("dash.byFunction"), d.byFunction, (i) => `${i.teamName} · ${humanize(i.label)}`)}
       ${column(t("dash.byClient"), d.byClient, (i) => (i.label ? humanize(i.label) : t("dash.noClient")))}
+      ${d.bySource.length ? column(t("dash.bySource"), d.bySource, (i) => t(i.key === "import" ? "dash.sourceImport" : "dash.sourceProxy")) : ""}
     </div>
   </article>`;
 }

@@ -88,6 +88,12 @@ function costOf(row, models = state.models) {
 const allRows = () => usage.concat(state.imported);
 
 /** Šta korisnik sme da vidi: vođa tima samo svoj tim, ostali celu firmu. */
+// Mock: uvezeni redovi su "import"; u demo podacima je i oko 15% proxy redova označeno kao import (po datumu i funkciji).
+function sourceOf(row) {
+  if (row.source === "import") return "import";
+  const h = [...`${row.date}|${row.function}`].reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 7);
+  return h % 100 < 15 ? "import" : "proxy";
+}
 function scopeRows(user) {
   const rows = allRows();
   return user.role === "lead" ? rows.filter((r) => r.teamId === user.teamId) : rows;
@@ -316,10 +322,10 @@ const routes = [
   { method: "GET", path: /^\/stats\/breakdown$/, handler: ({ user, query, m }) => {
     if (!query.from || !query.to) return fail(400, m.range);
     const by = query.by;
-    if (!["team", "function", "client", "model"].includes(by)) return fail(400, m.invalid);
+    if (!["team", "function", "client", "model", "source"].includes(by)) return fail(400, m.invalid);
     const groups = new Map();
     for (const r of inRange(scopeRows(user), query.from, query.to)) {
-      const key = by === "team" ? r.teamId : by === "function" ? `${r.teamId}:${r.function}` : by === "client" ? r.client || "" : r.model;
+      const key = by === "source" ? sourceOf(r) : by === "team" ? r.teamId : by === "function" ? `${r.teamId}:${r.function}` : by === "client" ? r.client || "" : r.model;
       const g = groups.get(key) || { key, cost: 0, tokens: 0, requests: 0, teamId: by === "function" ? r.teamId : undefined };
       g.cost += costOf(r);
       g.tokens += r.inputTokens + r.outputTokens;
@@ -330,6 +336,7 @@ const routes = [
       if (by === "team") return teamById(g.key)?.name ?? g.key;
       if (by === "function") return g.key.split(":")[1];
       if (by === "client") return g.key || null;
+      if (by === "source") return g.key;
       return modelById(g.key)?.name ?? g.key;
     };
     return ok([...groups.values()].map((g) => ({ ...g, label: label(g), teamName: g.teamId ? teamById(g.teamId)?.name : undefined, cost: round2(g.cost) })).sort((a, b) => b.cost - a.cost));
