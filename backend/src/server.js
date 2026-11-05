@@ -14,8 +14,12 @@ import * as users from "./routes/users.js";
 import * as models from "./routes/models.js";
 import * as usage from "./routes/usage.js";
 import * as savings from "./routes/savings.js";
+import * as proxy from "./routes/proxy.js";
+import * as proxyKeys from "./routes/proxyKeys.js";
+import { syncDefaultModels } from "./services/organizations.js";
 
 requireSecrets();
+syncDefaultModels();
 
 const app = express();
 app.disable("x-powered-by");
@@ -38,9 +42,11 @@ api.get("/openapi.json", (_req, res) => res.json(openapi));
 api.get("/health", (_req, res) => res.json({ ok: true }));
 
 api.use("/auth", publicAuth, privateAuth);
+// Proxy se autentikuje svojim ključem (tl_...), ne JWT-om; GET /proxy/status ispod ostaje za prijavljene.
+api.use("/proxy", proxy.router);
 // Sve ispod traži prijavljenog korisnika; prava po ulozi proverava svaka ruta.
 api.use(authenticate);
-for (const m of [org, stats, budgets, teams, users, models, usage, savings]) api.use(m.router);
+for (const m of [org, stats, budgets, teams, users, models, usage, savings, proxyKeys]) api.use(m.router);
 app.use("/api", api);
 
 app.use((_req, _res, next) => next(new HttpError(404, "notFound")));
