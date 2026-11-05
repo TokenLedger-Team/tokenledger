@@ -17,7 +17,7 @@ export const openapi = {
   info: { title: "TokenLedger API", version: "0.1.0", description: "Ugovor: frontend/API.md. Greške su uvek `{ message }`. Novac je uvek USD." },
   servers: [{ url: "/api" }],
   security: [{ bearer: [] }],
-  tags: ["Auth", "Organizacija", "Statistika", "Budžeti", "Timovi i korisnici", "Modeli", "Uvoz"].map((name) => ({ name })),
+  tags: ["Auth", "Organizacija", "Statistika", "Budžeti", "Timovi i korisnici", "Modeli", "Uvoz", "Replay i uštede", "Uvidi", "Podešavanja i izveštaji"].map((name) => ({ name })),
   components: {
     securitySchemes: { bearer: { type: "http", scheme: "bearer", bearerFormat: "JWT" } },
     schemas: {
@@ -30,6 +30,10 @@ export const openapi = {
       Summary: { type: "object", properties: { from: str, to: str, totalCost: num, totalTokens: int, inputTokens: int, outputTokens: int, requests: int } },
       TimeseriesPoint: { type: "object", properties: { date: str, cost: num, tokens: int, requests: int } },
       BreakdownRow: { type: "object", properties: { key: str, label: { ...str, nullable: true }, teamId: str, teamName: str, cost: num, tokens: int, requests: int } },
+      Replay: { type: "object", description: "Dok je status=running, rezultati su null.", properties: { id: str, teamId: str, teamName: str, function: str, sampleSize: int, baseModel: str, candidateModel: str, scoring: { type: "string", enum: ["judge_rules", "rules"] }, status: { type: "string", enum: ["running", "done"] }, createdAt: str, judgeScore: { ...int, nullable: true }, rulesScore: { ...int, nullable: true }, baseLatencyMs: { ...int, nullable: true }, candidateLatencyMs: { ...int, nullable: true }, verdict: { type: "string", enum: ["switch", "check", "dont"], nullable: true }, savingsPerMonth: { ...num, nullable: true }, savingsPct: { ...num, nullable: true } } },
+      RoutingRule: { type: "object", properties: { id: str, replayId: str, teamId: str, teamName: str, function: str, fromModel: str, toModel: str, minJudgeScore: int, enabled: { type: "boolean" } } },
+      Privacy: { type: "object", properties: { maskPii: { type: "boolean" }, maskedLast7Days: int } },
+      ReportStatus: { type: "object", properties: { lastImportAt: { ...str, nullable: true }, lastExportAt: { ...str, nullable: true } } },
       ImportRow: { type: "object", description: "Brojevi stižu kao stringovi iz CSV-a; prazan cost = računa se iz cena.", properties: { date: str, team: str, function: str, client: str, model: str, inputTokens: str, outputTokens: str, cost: str, requests: str } },
     },
   },
@@ -69,5 +73,21 @@ export const openapi = {
     "/models": { get: { tags: ["Modeli"], summary: "Modeli i cene", responses: { 200: json(arr(ref("Model"))), 401: R[401] } } },
     "/models/{id}": { put: { tags: ["Modeli"], summary: "Menja cene (admin); troškovi se preračunavaju", parameters: [idParam("id")], requestBody: body({ type: "object", required: ["inputPricePer1M", "outputPricePer1M"], properties: { inputPricePer1M: num, outputPricePer1M: num } }), responses: { 200: json(ref("Model")), 400: R[400], 401: R[401], 403: R[403], 404: R[404] } } },
     "/usage/import": { post: { tags: ["Uvoz"], summary: "Uvoz potrošnje (admin; lead samo za svoj tim)", requestBody: body({ type: "object", required: ["rows"], properties: { rows: arr(ref("ImportRow")) } }), responses: { 201: json({ type: "object", properties: { imported: int, skipped: int, errors: arr({ type: "object", properties: { row: int, message: str } }) } }), 400: R[400], 401: R[401], 403: R[403] } } },
+    "/replays": {
+      get: { tags: ["Replay i uštede"], summary: "Replay testovi (vođa tima: samo svoj tim), opadajuće po uštedi. Testovi u toku se završe posle ~6 s.", responses: { 200: json(arr(ref("Replay"))), 401: R[401] } },
+      post: { tags: ["Replay i uštede"], summary: "Pokreće replay test (admin; lead za svoj tim). baseModel je model koji funkcija najviše koristi.", requestBody: body({ type: "object", required: ["teamId", "function", "sampleSize", "candidateModel"], properties: { teamId: str, function: str, sampleSize: { type: "integer", minimum: 20, maximum: 1000 }, candidateModel: str, scoring: { type: "string", enum: ["judge_rules", "rules"] } } }), responses: { 201: json(ref("Replay")), 400: R[400], 401: R[401], 403: R[403] } },
+    },
+    "/stats/optimization": { get: { tags: ["Replay i uštede"], summary: "Ocena optimizacije (0–100); previousScore je procena (score − 9.6), kao u mocku", parameters: [from, to], responses: { 200: json({ type: "object", properties: { score: num, previousScore: num } }), 400: R[400], 401: R[401] } } },
+    "/routing-rules": { get: { tags: ["Replay i uštede"], summary: "Routing pravila (nastaju kad replay dobije verdikt switch; početno isključena)", responses: { 200: json(arr(ref("RoutingRule"))), 401: R[401] } } },
+    "/routing-rules/{id}": { put: { tags: ["Replay i uštede"], summary: "Uključuje/isključuje pravilo (admin; lead za svoj tim)", parameters: [idParam("id")], requestBody: body({ type: "object", required: ["enabled"], properties: { enabled: { type: "boolean" } } }), responses: { 200: json({ type: "object", properties: { id: str, enabled: { type: "boolean" } } }), 401: R[401], 403: R[403], 404: R[404] } } },
+    "/insights/anomalies": { get: { tags: ["Uvidi"], summary: "Anomalije: spike (dnevni trošak > 2.5× proseka prethodnih 7 dana) i retry", responses: { 200: json(arr({ type: "object", description: "type=spike: date, factor; type=retry: failedRetries, hours", properties: { id: str, type: { type: "string", enum: ["spike", "retry"] }, teamId: str, teamName: str, function: str, client: { ...str, nullable: true }, date: str, factor: num, failedRetries: int, hours: int, detectedAt: str } })), 401: R[401] } } },
+    "/insights/cache": { get: { tags: ["Uvidi"], summary: "Ponovljeni upiti i procena uštede keširanjem (repeatShare dok nema proxyja dolazi iz seeda)", responses: { 200: json({ type: "object", properties: { repeatShare: num, estMonthlySavings: num, largestSource: { type: "object", nullable: true, properties: { teamName: str, function: str } } } }), 401: R[401] } } },
+    "/insights/forecast": { get: { tags: ["Uvidi"], summary: "Projekcija za tekući mesec (zbir za timove koje korisnik vidi)", responses: { 200: json({ type: "object", properties: { month: str, projected: num, budget: num } }), 401: R[401] } } },
+    "/settings/privacy": {
+      get: { tags: ["Podešavanja i izveštaji"], summary: "Maskiranje ličnih podataka", responses: { 200: json(ref("Privacy")), 401: R[401] } },
+      put: { tags: ["Podešavanja i izveštaji"], summary: "Menja maskiranje (admin)", requestBody: body({ type: "object", properties: { maskPii: { type: "boolean" } } }), responses: { 200: json(ref("Privacy")), 401: R[401], 403: R[403] } },
+    },
+    "/reports/status": { get: { tags: ["Podešavanja i izveštaji"], summary: "Poslednji uvoz i izvoz", responses: { 200: json(ref("ReportStatus")), 401: R[401] } } },
+    "/reports/exports": { post: { tags: ["Podešavanja i izveštaji"], summary: "Beleži izvoz (sam fajl pravi frontend)", requestBody: body({ type: "object", required: ["format"], properties: { format: { type: "string", enum: ["csv", "pdf"] } } }), responses: { 201: json(ref("ReportStatus")), 400: R[400], 401: R[401] } } },
   },
 };

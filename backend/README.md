@@ -53,9 +53,19 @@ Grupa 1 (MVP): `POST /auth/login`, `POST /auth/logout`, `GET /auth/me`, `GET /st
 
 Grupa 2 (proxy): `GET /org`, `GET /providers`, `POST /providers/:id/keys`, `DELETE /providers/:id/keys/:keyId`, `GET /proxy/status`, `GET /stats/hourly`, `GET /stats/models`.
 
+Grupa 3: `GET/POST /replays`, `GET /stats/optimization`, `GET /insights/anomalies`, `GET /insights/cache`, `GET /insights/forecast`, `GET /routing-rules`, `PUT /routing-rules/:id`.
+
+Grupa 4 (delimično): `GET/PUT /settings/privacy`, `GET /reports/status`, `POST /reports/exports`.
+
 Dodatno: `GET/PUT /alert-rules` (potrebno stranici Budžeti; `warnAtPct` utiče i na status budžeta).
 
-**Nije urađeno:** `/replays`, `/routing-rules`, `/stats/optimization`, `/insights/*` (grupa 3); `/auth/signup`, `/auth/google`, `/auth/forgot-password`, `/settings/privacy`, `/reports/*` (grupa 4). Stranica Pregled učitava sve odjednom i traži grupu 3, pa sa pravim backendom prikazuje grešku dok te rute ne postoje.
+**Nije urađeno:** `/auth/signup`, `/auth/google`, `/auth/forgot-password`.
+
+## Replay testovi i dok nema proxyja
+
+- `POST /replays` pravi test sa `status: "running"`; kad prođe ~6 s, prvi sledeći upit ga završava (nema pozadinskog posla). Pravi "sudija" ne postoji: ocene su pseudo-slučajne ali stabilne za isti par funkcija/kandidat (isto kao mock). Test sa verdiktom `switch` pravi routing pravilo (isključeno).
+- Verdikt, ušteda, ocena optimizacije i spike anomalija računaju se po pravilima iz API.md. `previousScore` u `/stats/optimization` je procena (`score − 9.6`) jer istorija pravila ne postoji.
+- Podaci koje bi merio proxy čuvaju se kao brojači koje seed postavlja: `repeatShare` i najveći izvor ponavljanja (`/insights/cache`), `maskedLast7Days` (`/settings/privacy`) i neuspeli pozivi u petlji (anomalija `retry`, tabela `retry_events`). `largestSource` se vođi tima vraća samo ako je izvor u njegovom timu, inače `null`.
 
 ## Pravila
 
