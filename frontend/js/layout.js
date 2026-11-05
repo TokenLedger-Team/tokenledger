@@ -125,7 +125,7 @@ function renderSidebar(user, active, shared) {
     ${providers ? `<div class="sidebar-divider"></div><div class="nav-label">${t("nav.providers")}</div>${providers}` : ""}
     ${proxy ? `<div class="sidebar-bottom">
       <div class="health-dot${proxy.healthy ? "" : " down"}"></div>
-      <div><strong>${t(proxy.healthy ? "proxy.healthy" : "proxy.down")}</strong><small>${t("proxy.lastCall", { ago: timeAgo(proxy.lastCallAt) })}</small></div>
+      <div><strong>${t(proxy.healthy ? "proxy.healthy" : "proxy.down")}</strong><small>${proxy.lastCallAt ? t("proxy.lastCall", { ago: timeAgo(proxy.lastCallAt) }) : t("proxy.noCalls")}</small></div>
       ${proxy.healthy ? '<span class="health-check" aria-hidden="true">✓</span>' : ""}</div>` : ""}`;
 }
 
@@ -186,6 +186,6 @@ function renderTopbar(user, page) {
 function renderFooter() {
   const el = document.getElementById("footer");
   el.innerHTML = `<span>Token Ledger <span class="footer-dot">•</span> ${t("app.tagline")}</span>
-    <span>${config.USE_MOCK ? `<span class="demo-badge">${t("common.demoData")}</span>` : t("common.liveData")} · ${t("common.updatedNow")}</span>`;
+    <span>${config.USE_MOCK ? `<span class="demo-badge">${t("common.demoData")}</span>` : t("common.liveData")}</span>`;
   translatePage(el);
 }

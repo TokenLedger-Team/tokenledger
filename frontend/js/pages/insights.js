@@ -45,7 +45,7 @@ startPage({
 
       <article class="card h6">${head(t("in.routing"), t("in.routingSub"))}
         ${routing.length ? routing.map((r) => toggle(`route-${r.id}`, escapeHtml(t("in.routingRule", { fn: `${r.teamName} · ${humanize(r.function)}`, model: name(r.toModel), n: r.minJudgeScore })), r.enabled, !canRoute)).join("") : `<p class="vnote">${t("in.noRouting")}</p>`}
-        <p class="vnote">${t("in.routingNote")}</p>${readOnlyNote(canRoute)}</article>
+        ${readOnlyNote(canRoute)}</article>
 
       <article class="card">${head(t("in.masking"), t("in.maskingSub"))}
         ${toggle("maskPii", t("in.maskToggle"), privacy.maskPii, !canPrivacy)}

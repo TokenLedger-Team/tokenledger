@@ -113,7 +113,12 @@ date/time, teamId, function, client, model, requests, inputTokens, outputTokens,
 | GET | `/providers` | `[{ id: "openai", name: "OpenAI", connected: true, keys: [{ id, environment: "production", last4: "3f9a" }] }]` |
 | POST | `/providers/:id/keys` | Telo je `{ apiKey, environment }`, a odgovor `201 { id, environment, last4 }`. **Ključ se čuva šifrovano i nikad se ne vraća ceo.** Novi ključ zamenjuje stari za isto okruženje. |
 | DELETE | `/providers/:id/keys/:keyId` | `204` |
-| GET | `/proxy/status` | `{ healthy: true, lastCallAt }` (donji levi ugao menija) |
+| GET | `/proxy/status` | `{ healthy: true, lastCallAt }`; `lastCallAt` je `null` dok nema poziva (donji levi ugao menija) |
+| GET | `/proxy-keys` | `[{ id, name, last4, createdAt }]` (samo admin) |
+| POST | `/proxy-keys` | Telo je `{ name }` (1–80 znakova), a odgovor `201 { id, name, last4, createdAt, key }`. **Pun `key` (`tl_...`) stiže samo ovde, jednom**; frontend ga prikazuje u prozoru i ne čuva ga. |
+| DELETE | `/proxy-keys/:id` | `204`; aplikacije sa tim ključem dobijaju `401` |
+
+Uputstvo u Podešavanjima gradi adrese proxyja iz `proxyUrl`: OpenAI `proxyUrl + /openai/v1`, Anthropic `proxyUrl + /anthropic` (SDK primeri prate `backend/README.md`).
 
 Provajderi koje frontend zna da prikaže: `openai`, `anthropic`, `google`, `azure`. Ostali dobijaju prvo slovo kao ikonicu. `connected` je `true` ako postoji `production` ključ.
 
@@ -301,3 +306,4 @@ Dok neki endpoint ne postoji, **samo kartica koja ga koristi** prikaže grešku 
 4. **Više organizacija.** `signup` pravi novu firmu. Da li korisnik može biti u više firmi?
 5. **Pozivnice.** Kako izgleda tok kada pozvani korisnik prvi put postavlja lozinku?
 6. **Anomalija "retry loop".** Proxy mora da beleži neuspele pozive. Da li je to u planu?
+7. **Izvor potrošnje (`source`).** Kolona `source` (`proxy` | `import`) postoji u bazi, ali je nijedan endpoint ne vraća, pa Pregled ne može da razlikuje proxy pozive od CSV uvoza. Predlog: `GET /stats/breakdown?by=source` koji vraća `[{ key: "proxy" | "import", label, cost, tokens, requests }]`, isto kao ostale vrednosti `by`.
