@@ -12,4 +12,4 @@ export function scopedTeams(db, user) {
 
 // Trošak jednog reda: svoj `cost` (uvoz) ili tokeni × cene modela.
 export const COST_SQL = `COALESCE(u.cost, (u.input_tokens * m.input_price_per_1m + u.output_tokens * m.output_price_per_1m) / 1000000.0)`;
-export const USAGE_FROM = `usage u JOIN models m ON m.id = u.model`;
+export const USAGE_FROM = `usage u JOIN models m ON m.id = u.model AND m.org_id = u.org_id`;

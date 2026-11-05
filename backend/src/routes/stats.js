@@ -37,4 +37,4 @@ router.get("/stats/hourly", (req, res) => {
   res.json(hourly(req.user, date));
 });
 
-router.get("/stats/models", (_req, res) => res.json(fleet()));
+router.get("/stats/models", (req, res) => res.json(fleet(req.user.org_id)));

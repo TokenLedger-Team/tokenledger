@@ -19,7 +19,7 @@ router.post("/usage/import", requireRole("admin", "lead"), (req, res) => {
   const m = messages(req.lang);
   const orgId = req.user.org_id;
   const teams = db.prepare("SELECT * FROM teams WHERE org_id = ?").all(orgId);
-  const models = db.prepare("SELECT * FROM models").all();
+  const models = db.prepare("SELECT * FROM models WHERE org_id = ?").all(orgId);
   const insert = db.prepare(
     `INSERT INTO usage (org_id, date, team_id, function, client, model, requests, input_tokens, output_tokens, cost, source)
      VALUES (?,?,?,?,?,?,?,?,?,?, 'import')`

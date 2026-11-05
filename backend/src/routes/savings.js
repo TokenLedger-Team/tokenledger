@@ -26,7 +26,7 @@ router.post("/replays", requireRole("admin", "lead"), (req, res) => {
   const b = req.body || {};
   if (req.user.role === "lead" && b.teamId !== req.user.team_id) throw new HttpError(403, "forbidden");
   const sampleSize = Number(b.sampleSize);
-  const candidate = db.prepare("SELECT id FROM models WHERE id = ?").get(b.candidateModel);
+  const candidate = db.prepare("SELECT id FROM models WHERE org_id = ? AND id = ?").get(req.user.org_id, String(b.candidateModel));
   // Bazni model = model koji ta funkcija trenutno najviše koristi.
   const base = db
     .prepare("SELECT model, SUM(requests) req FROM usage WHERE org_id = ? AND team_id = ? AND function = ? GROUP BY model ORDER BY req DESC LIMIT 1")

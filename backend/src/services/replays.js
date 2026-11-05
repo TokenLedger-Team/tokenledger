@@ -12,8 +12,8 @@ export function verdictOf(r) {
   return "dont";
 }
 
-const peakLatency = (modelId, fallback) => {
-  const m = db.prepare("SELECT fleet FROM models WHERE id = ?").get(modelId);
+const peakLatency = (orgId, modelId, fallback) => {
+  const m = db.prepare("SELECT fleet FROM models WHERE org_id = ? AND id = ?").get(orgId, modelId);
   return m?.fleet ? JSON.parse(m.fleet).peak[0] : fallback;
 };
 
@@ -35,7 +35,7 @@ export function settleReplays(orgId) {
       const res = db.prepare(
         `UPDATE replays SET status='done', judge_score=?, rules_score=?, base_latency_ms=?, candidate_latency_ms=?
          WHERE id=? AND status='running'`
-      ).run(judge, rules, peakLatency(r.base_model, DEFAULT_PEAK_LATENCY), peakLatency(r.candidate_model, DEFAULT_CAND_LATENCY), r.id);
+      ).run(judge, rules, peakLatency(orgId, r.base_model, DEFAULT_PEAK_LATENCY), peakLatency(orgId, r.candidate_model, DEFAULT_CAND_LATENCY), r.id);
       if (!res.changes) return;
       if (verdictOf({ judge_score: judge, rules_score: rules }) === "switch") {
         db.prepare("INSERT OR IGNORE INTO routing_rules (id, org_id, replay_id, enabled) VALUES (?,?,?,0)").run(`rr-${r.id}`, orgId, r.id);
@@ -51,7 +51,7 @@ function savings(r) {
   const row = db.prepare(
     `SELECT COALESCE(SUM(COALESCE(u.cost, (u.input_tokens*b.input_price_per_1m + u.output_tokens*b.output_price_per_1m)/1e6)),0) now,
             COALESCE(SUM((u.input_tokens*c.input_price_per_1m + u.output_tokens*c.output_price_per_1m)/1e6),0) cand
-     FROM usage u JOIN models b ON b.id = u.model JOIN models c ON c.id = ?
+     FROM usage u JOIN models b ON b.id = u.model AND b.org_id = u.org_id JOIN models c ON c.id = ? AND c.org_id = u.org_id
      WHERE u.org_id = ? AND u.team_id = ? AND u.function = ? AND u.model = ? AND u.date BETWEEN ? AND ?`
   ).get(r.candidate_model, r.org_id, r.team_id, r.function, r.base_model, addDays(today, -30), addDays(today, -1));
   const saved = Math.max(0, row.now - row.cand);

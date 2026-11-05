@@ -7,22 +7,11 @@ import { config, requireSecrets } from "./config.js";
 import { addDays, parseISODate, round2, todayISO } from "./util.js";
 import { encrypt } from "./services/crypto.js";
 import { refreshTeamCatalog } from "./services/catalog.js";
+import { DEFAULT_MODELS, createOrganization } from "./services/organizations.js";
 
 requireSecrets();
 
-const ORG = { id: "org-1", name: "Acme Corp", proxyUrl: "https://proxy.tokenledger.example/v1" };
-
-// Cene su ilustrativne (USD po 1M tokena). fleet = [latencija ms, opterećenje %, protok/min] van vrha i u vrhu.
-const MODELS = [
-  ["gpt-4o", "GPT-4o", "OpenAI", "GPT", 2.5, 10, "128k", [380, 41, 18000], [640, 86, 42000]],
-  ["gpt-4o-mini", "GPT-4o mini", "OpenAI", "GPT", 0.15, 0.6, "128k", [190, 30, 22000], [260, 62, 46000]],
-  ["gpt-4.1", "GPT-4.1", "OpenAI", "GPT", 2, 8, "1M", [420, 35, 9000], [610, 71, 21000]],
-  ["claude-sonnet", "Claude 3.5 Sonnet", "Anthropic", "Claude", 3, 15, "200k", [460, 38, 12000], [820, 91, 29000]],
-  ["claude-haiku", "Claude Haiku", "Anthropic", "Claude", 0.8, 4, "200k", [210, 28, 14000], [300, 58, 31000]],
-  ["gemini-pro", "Gemini 1.5 Pro", "Google", "Gemini", 1.25, 5, "2M", [510, 30, 7000], [690, 64, 16000]],
-  ["gemini-flash", "Gemini Flash", "Google", "Gemini", 0.075, 0.3, "1M", [230, 26, 10000], [330, 55, 24000]],
-  ["llama-70b", "Llama 3.1 70B", "Azure", "Llama", 0.9, 0.9, "128k", [540, 34, 5000], [980, 89, 11000]],
-];
+const ORG = { id: "org-1", name: "Acme Corp" };
 
 const TEAMS = [
   { id: "t-support", name: "Support", slug: "support" },
@@ -114,12 +103,7 @@ tx(() => {
   for (const t of ["revoked_tokens", "retry_events", "org_settings", "routing_rules", "replays", "provider_keys", "alert_rules", "budgets", "usage", "users", "teams", "models", "organizations"]) {
     db.exec(`DELETE FROM ${t}`);
   }
-  db.prepare("INSERT INTO organizations (id, name, proxy_url) VALUES (?,?,?)").run(ORG.id, ORG.name, ORG.proxyUrl);
-
-  const insModel = db.prepare("INSERT INTO models (id, name, provider, family, input_price_per_1m, output_price_per_1m, context_window, fleet) VALUES (?,?,?,?,?,?,?,?)");
-  for (const [id, name, provider, family, inp, out, ctx, offPeak, peak] of MODELS) {
-    insModel.run(id, name, provider, family, inp, out, ctx, JSON.stringify({ offPeak, peak }));
-  }
+  createOrganization(ORG.name, ORG.id);
 
   const insTeam = db.prepare("INSERT INTO teams (id, org_id, name, slug) VALUES (?,?,?,?)");
   TEAMS.forEach((t) => insTeam.run(t.id, ORG.id, t.name, t.slug));
@@ -137,7 +121,7 @@ tx(() => {
   TEAMS.forEach((t) => refreshTeamCatalog(t.id));
 
   // Početni limiti: potrošnja poslednjih 30 dana × faktor, zaokruženo na 50 (kao u mocku).
-  const price = new Map(MODELS.map((m) => [m[0], { i: m[4], o: m[5] }]));
+  const price = new Map(DEFAULT_MODELS.map((m) => [m[0], { i: m[4], o: m[5] }]));
   const from30 = addDays(todayISO(), -29);
   const insBudget = db.prepare("INSERT INTO budgets (team_id, limit_usd) VALUES (?, ?)");
   for (const t of TEAMS) {
@@ -147,7 +131,6 @@ tx(() => {
     insBudget.run(t.id, Math.max(100, Math.round((spent30 * LIMIT_FACTOR[t.id]) / 50) * 50));
   }
 
-  db.prepare("INSERT INTO alert_rules (org_id) VALUES (?)").run(ORG.id);
 
   // Replay testovi i routing pravila iz mocka (završeni pre 3 dana).
   const created = new Date(Date.now() - 86400000 * 3).toISOString();
@@ -160,8 +143,8 @@ tx(() => {
   db.prepare("INSERT INTO routing_rules (id, org_id, replay_id, enabled) VALUES (?,?,?,?)").run("rr-r4", ORG.id, "r4", 0);
 
   // Brojači koje će puniti proxy; za demo isti kao u mocku.
-  db.prepare("INSERT INTO org_settings (org_id, mask_pii, masked_last7, repeat_share, repeat_team_id, repeat_function) VALUES (?,?,?,?,?,?)")
-    .run(ORG.id, 1, 412, 0.18, "t-support", "faq-answers");
+  db.prepare("UPDATE org_settings SET mask_pii = 1, masked_last7 = 412, repeat_share = 0.18, repeat_team_id = 't-support', repeat_function = 'faq-answers' WHERE org_id = ?")
+    .run(ORG.id);
   db.prepare("INSERT INTO retry_events (id, org_id, team_id, function, client, failed_retries, hours, detected_at) VALUES (?,?,?,?,?,?,?,?)")
     .run("an-retry", ORG.id, "t-support", "ticket-classification", null, 1240, 2, new Date(Date.now() - 5400000).toISOString());
 

@@ -36,15 +36,18 @@ CREATE TABLE IF NOT EXISTS teams (
   UNIQUE (org_id, slug)
 );
 
+-- Katalog modela i cena je po organizaciji (svaka firma menja samo svoje cene).
 CREATE TABLE IF NOT EXISTS models (
-  id                 TEXT PRIMARY KEY,
+  org_id             TEXT NOT NULL REFERENCES organizations(id),
+  id                 TEXT NOT NULL,
   name               TEXT NOT NULL,
   provider           TEXT NOT NULL,
   family             TEXT NOT NULL,
   input_price_per_1m  REAL NOT NULL,
   output_price_per_1m REAL NOT NULL,
   context_window     TEXT NOT NULL,
-  fleet              TEXT                   -- JSON { offPeak:[ms,%,rpm], peak:[ms,%,rpm] }
+  fleet              TEXT,                  -- JSON { offPeak:[ms,%,rpm], peak:[ms,%,rpm] }
+  PRIMARY KEY (org_id, id)
 );
 
 -- hour je NULL za dnevne zbirove (seed, uvoz); proxy može upisivati po satu.
@@ -57,7 +60,7 @@ CREATE TABLE IF NOT EXISTS usage (
   team_id       TEXT NOT NULL REFERENCES teams(id),
   function      TEXT NOT NULL,
   client        TEXT,
-  model         TEXT NOT NULL REFERENCES models(id),
+  model         TEXT NOT NULL,            -- models.id u okviru iste organizacije
   requests      INTEGER NOT NULL DEFAULT 0,
   input_tokens  INTEGER NOT NULL DEFAULT 0,
   output_tokens INTEGER NOT NULL DEFAULT 0,
@@ -99,8 +102,8 @@ CREATE TABLE IF NOT EXISTS replays (
   team_id              TEXT NOT NULL REFERENCES teams(id),
   function             TEXT NOT NULL,
   sample_size          INTEGER NOT NULL,
-  base_model           TEXT NOT NULL REFERENCES models(id),
-  candidate_model      TEXT NOT NULL REFERENCES models(id),
+  base_model           TEXT NOT NULL,
+  candidate_model      TEXT NOT NULL,
   scoring              TEXT NOT NULL CHECK (scoring IN ('judge_rules','rules')),
   status               TEXT NOT NULL CHECK (status IN ('running','done')),
   judge_score          INTEGER,
