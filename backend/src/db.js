@@ -71,6 +71,7 @@ CREATE TABLE IF NOT EXISTS usage (
 );
 CREATE INDEX IF NOT EXISTS idx_usage_org_date ON usage(org_id, date);
 CREATE INDEX IF NOT EXISTS idx_usage_team_date ON usage(team_id, date);
+CREATE INDEX IF NOT EXISTS idx_usage_org_source ON usage(org_id, source, created_at);
 
 CREATE TABLE IF NOT EXISTS budgets (
   team_id   TEXT PRIMARY KEY REFERENCES teams(id) ON DELETE CASCADE,
@@ -94,6 +95,16 @@ CREATE TABLE IF NOT EXISTS provider_keys (
   encrypted_key TEXT NOT NULL,
   last4         TEXT NOT NULL,
   UNIQUE (org_id, provider_id, environment)
+);
+
+-- Ključ kojim aplikacija (agent) govori sa našim proxyjem. Čuva se samo SHA-256 heš.
+CREATE TABLE IF NOT EXISTS proxy_keys (
+  id         TEXT PRIMARY KEY,
+  org_id     TEXT NOT NULL REFERENCES organizations(id),
+  name       TEXT NOT NULL,
+  hash       TEXT NOT NULL UNIQUE,
+  last4      TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
 );
 
 CREATE TABLE IF NOT EXISTS replays (
@@ -144,6 +155,7 @@ CREATE TABLE IF NOT EXISTS retry_events (
   hours           INTEGER NOT NULL,
   detected_at     TEXT NOT NULL
 );
+CREATE INDEX IF NOT EXISTS idx_retry_key ON retry_events(org_id, team_id, function, detected_at);
 
 -- Poništeni tokeni (logout).
 CREATE TABLE IF NOT EXISTS revoked_tokens (
