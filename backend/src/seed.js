@@ -97,6 +97,13 @@ function generateUsage(days = 180) {
   return rows;
 }
 
+const REPLAYS = [
+  { id: "r1", teamId: "t-support", fn: "ticket-classification", sampleSize: 200, base: "gpt-4o", cand: "gpt-4o-mini", judge: 94, rules: 98, baseMs: 640, candMs: 260 },
+  { id: "r2", teamId: "t-eng", fn: "doc-summarization", sampleSize: 150, base: "claude-sonnet", cand: "claude-haiku", judge: 86, rules: 93, baseMs: 820, candMs: 300 },
+  { id: "r3", teamId: "t-support", fn: "chat-assistant", sampleSize: 200, base: "gpt-4o", cand: "gpt-4o-mini", judge: 71, rules: 80, baseMs: 640, candMs: 260 },
+  { id: "r4", teamId: "t-data", fn: "tagging-routing", sampleSize: 300, base: "gpt-4o", cand: "gpt-4o-mini", judge: 96, rules: 99, baseMs: 640, candMs: 260 },
+];
+
 const PROVIDER_KEYS = [
   ["k1", "openai", "production", "3f9a"],
   ["k2", "anthropic", "production", "b21c"],
@@ -104,7 +111,7 @@ const PROVIDER_KEYS = [
 ];
 
 tx(() => {
-  for (const t of ["revoked_tokens", "provider_keys", "alert_rules", "budgets", "usage", "users", "teams", "models", "organizations"]) {
+  for (const t of ["revoked_tokens", "retry_events", "org_settings", "routing_rules", "replays", "provider_keys", "alert_rules", "budgets", "usage", "users", "teams", "models", "organizations"]) {
     db.exec(`DELETE FROM ${t}`);
   }
   db.prepare("INSERT INTO organizations (id, name, proxy_url) VALUES (?,?,?)").run(ORG.id, ORG.name, ORG.proxyUrl);
@@ -141,6 +148,22 @@ tx(() => {
   }
 
   db.prepare("INSERT INTO alert_rules (org_id) VALUES (?)").run(ORG.id);
+
+  // Replay testovi i routing pravila iz mocka (završeni pre 3 dana).
+  const created = new Date(Date.now() - 86400000 * 3).toISOString();
+  const insReplay = db.prepare(
+    `INSERT INTO replays (id, org_id, team_id, function, sample_size, base_model, candidate_model, scoring, status, judge_score, rules_score, base_latency_ms, candidate_latency_ms, created_at)
+     VALUES (?,?,?,?,?,?,?,'judge_rules','done',?,?,?,?,?)`
+  );
+  for (const r of REPLAYS) insReplay.run(r.id, ORG.id, r.teamId, r.fn, r.sampleSize, r.base, r.cand, r.judge, r.rules, r.baseMs, r.candMs, created);
+  db.prepare("INSERT INTO routing_rules (id, org_id, replay_id, enabled) VALUES (?,?,?,?)").run("rr-r1", ORG.id, "r1", 1);
+  db.prepare("INSERT INTO routing_rules (id, org_id, replay_id, enabled) VALUES (?,?,?,?)").run("rr-r4", ORG.id, "r4", 0);
+
+  // Brojači koje će puniti proxy; za demo isti kao u mocku.
+  db.prepare("INSERT INTO org_settings (org_id, mask_pii, masked_last7, repeat_share, repeat_team_id, repeat_function) VALUES (?,?,?,?,?,?)")
+    .run(ORG.id, 1, 412, 0.18, "t-support", "faq-answers");
+  db.prepare("INSERT INTO retry_events (id, org_id, team_id, function, client, failed_retries, hours, detected_at) VALUES (?,?,?,?,?,?,?,?)")
+    .run("an-retry", ORG.id, "t-support", "ticket-classification", null, 1240, 2, new Date(Date.now() - 5400000).toISOString());
 
   // Demo ključevi su izmišljeni; čuvaju se šifrovani kao i pravi.
   const insKey = db.prepare("INSERT INTO provider_keys (id, org_id, provider_id, environment, encrypted_key, last4) VALUES (?,?,?,?,?,?)");

@@ -93,6 +93,55 @@ CREATE TABLE IF NOT EXISTS provider_keys (
   UNIQUE (org_id, provider_id, environment)
 );
 
+CREATE TABLE IF NOT EXISTS replays (
+  id                   TEXT PRIMARY KEY,
+  org_id               TEXT NOT NULL REFERENCES organizations(id),
+  team_id              TEXT NOT NULL REFERENCES teams(id),
+  function             TEXT NOT NULL,
+  sample_size          INTEGER NOT NULL,
+  base_model           TEXT NOT NULL REFERENCES models(id),
+  candidate_model      TEXT NOT NULL REFERENCES models(id),
+  scoring              TEXT NOT NULL CHECK (scoring IN ('judge_rules','rules')),
+  status               TEXT NOT NULL CHECK (status IN ('running','done')),
+  judge_score          INTEGER,
+  rules_score          INTEGER,
+  base_latency_ms      INTEGER,
+  candidate_latency_ms INTEGER,
+  created_at           TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS routing_rules (
+  id        TEXT PRIMARY KEY,
+  org_id    TEXT NOT NULL REFERENCES organizations(id),
+  replay_id TEXT NOT NULL UNIQUE REFERENCES replays(id) ON DELETE CASCADE,
+  enabled   INTEGER NOT NULL DEFAULT 0
+);
+
+-- Podešavanja i brojači po organizaciji. Polja označena (proxy) puni proxy kad bude postojao;
+-- do tada ih postavlja seed.
+CREATE TABLE IF NOT EXISTS org_settings (
+  org_id          TEXT PRIMARY KEY REFERENCES organizations(id),
+  mask_pii        INTEGER NOT NULL DEFAULT 1,
+  masked_last7    INTEGER NOT NULL DEFAULT 0,   -- (proxy)
+  last_import_at  TEXT,
+  last_export_at  TEXT,
+  repeat_share    REAL NOT NULL DEFAULT 0,      -- (proxy) udeo ponovljenih upita
+  repeat_team_id  TEXT,                         -- (proxy) najveći izvor ponavljanja
+  repeat_function TEXT
+);
+
+-- Neuspeli pozivi u petlji (anomalija "retry"); beleži ih proxy.
+CREATE TABLE IF NOT EXISTS retry_events (
+  id              TEXT PRIMARY KEY,
+  org_id          TEXT NOT NULL REFERENCES organizations(id),
+  team_id         TEXT NOT NULL REFERENCES teams(id),
+  function        TEXT NOT NULL,
+  client          TEXT,
+  failed_retries  INTEGER NOT NULL,
+  hours           INTEGER NOT NULL,
+  detected_at     TEXT NOT NULL
+);
+
 -- Poništeni tokeni (logout).
 CREATE TABLE IF NOT EXISTS revoked_tokens (
   jti        TEXT PRIMARY KEY,
