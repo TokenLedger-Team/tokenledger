@@ -33,7 +33,7 @@ export function timeseries(user, from, to) {
 
 export function breakdown(user, from, to, by) {
   const s = usageScope(user);
-  const keyExpr = { team: "u.team_id", function: "u.team_id || ':' || u.function", client: "COALESCE(u.client, '')", model: "u.model" }[by];
+  const keyExpr = { team: "u.team_id", function: "u.team_id || ':' || u.function", client: "COALESCE(u.client, '')", model: "u.model", source: "u.source" }[by];
   const rows = db
     .prepare(
       `SELECT ${keyExpr} AS key, MIN(u.team_id) team_id, MIN(u.function) fn, MIN(m.name) model_name,
@@ -51,6 +51,7 @@ export function breakdown(user, from, to, by) {
         item.teamId = r.team_id;
         item.teamName = teamNames.get(r.team_id);
       } else if (by === "client") item.label = r.key || null;
+      else if (by === "source") item.label = r.key;
       else item.label = r.model_name;
       return item;
     })

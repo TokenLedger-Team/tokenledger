@@ -136,7 +136,7 @@ Svi parametri `from` i `to` su obavezni. Frontend uvek traži i **prethodni peri
 [{ "date": "2026-10-27", "cost": 812.4, "tokens": 450000000, "requests": 260000 }]
 ```
 
-**`GET /stats/breakdown?from=&to=&by=team|function|client|model`**: sortirano po `cost`, opadajuće.
+**`GET /stats/breakdown?from=&to=&by=team|function|client|model|source`**: sortirano po `cost`, opadajuće.
 ```json
 [{ "key": "t-support:faq-answers", "label": "faq-answers", "teamId": "t-support", "teamName": "Support",
    "cost": 1023.1, "tokens": 400000000, "requests": 300000 }]
@@ -145,6 +145,7 @@ Svi parametri `from` i `to` su obavezni. Frontend uvek traži i **prethodni peri
 - `by=function`: `key` je `teamId:function`, `label` je slug funkcije, a `teamId` i `teamName` su obavezni.
 - `by=client`: `key` je slug klijenta ili `""`, a `label` je slug ili `null` za pozive bez klijenta.
 - `by=model`: `key` je id modela, `label` je naziv modela.
+- `by=source`: `key` i `label` su `proxy` (pozivi kroz proxy) ili `import` (CSV uvoz); vraća samo izvore koji imaju potrošnju u periodu. Vođa tima vidi samo svoj tim.
 
 **`GET /stats/hourly?date=YYYY-MM-DD`**: 24 reda (sati 0 do 23).
 ```json
@@ -306,4 +307,3 @@ Dok neki endpoint ne postoji, **samo kartica koja ga koristi** prikaže grešku 
 4. **Više organizacija.** `signup` pravi novu firmu. Da li korisnik može biti u više firmi?
 5. **Pozivnice.** Kako izgleda tok kada pozvani korisnik prvi put postavlja lozinku?
 6. **Anomalija "retry loop".** Proxy mora da beleži neuspele pozive. Da li je to u planu?
-7. **Izvor potrošnje (`source`).** Kolona `source` (`proxy` | `import`) postoji u bazi, ali je nijedan endpoint ne vraća, pa Pregled ne može da razlikuje proxy pozive od CSV uvoza. Predlog: `GET /stats/breakdown?by=source` koji vraća `[{ key: "proxy" | "import", label, cost, tokens, requests }]`, isto kao ostale vrednosti `by`.

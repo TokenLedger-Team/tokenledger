@@ -81,6 +81,23 @@ curl -s -o /dev/null "$P/openai/v1/chat/completions" -H "Authorization: Bearer $
 check "nepoznat model dodat sa cenom 0" "$(curl -s "$A/models" "${AUTH[@]}" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>console.log(JSON.parse(s).filter(m=>m.id==="gpt-9-new-2024-07-18"&&m.inputPricePer1M===0).length))')" "1"
 check "ključ nije u logu" "$(grep -c 'sk-real\|sk-ant-real\|tl_' "$T/api.log")" "0"
 
+echo "Izvor potrošnje (by=source)"
+D=$(date +%F)
+PS=$(SUM)
+curl -s "$A/usage/import" "${AUTH[@]}" "${H[@]}" -d "{\"rows\":[{\"date\":\"$D\",\"team\":\"support\",\"function\":\"csv-fn\",\"model\":\"gpt-4o-mini\",\"inputTokens\":\"1000\",\"outputTokens\":\"500\",\"cost\":\"1.5\",\"requests\":\"3\"}]}" >/dev/null
+BS=$(curl -s "$A/stats/breakdown?from=$D&to=$D&by=source" "${AUTH[@]}")
+BJ() { echo "$BS" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const a=JSON.parse(s);const r=a.find(x=>x.key===process.argv[1]);console.log(r?r[process.argv[2]]:"")})' "$1" "$2"; }
+check "source: 2 izvora" "$(echo "$BS" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>console.log(JSON.parse(s).length))')" "2"
+check "source: import tokeni" "$(BJ import tokens)" "1500"
+check "source: import zahtevi" "$(BJ import requests)" "3"
+check "source: import trošak" "$(BJ import cost)" "1.5"
+check "source: import label" "$(BJ import label)" "import"
+check "source: proxy tokeni = summary pre uvoza" "$(BJ proxy tokens)" "$(echo "$PS" | j totalTokens)"
+check "source: proxy zahtevi = summary pre uvoza" "$(BJ proxy requests)" "$(echo "$PS" | j requests)"
+check "source: proxy label" "$(BJ proxy label)" "proxy"
+check "source: sortirano po trošku opadajuće" "$(echo "$BS" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const a=JSON.parse(s);console.log(a[0].cost>=a[1].cost)})')" "true"
+check "source: nepoznat by -> 400" "$(curl -s -o /dev/null -w '%{http_code}' "$A/stats/breakdown?from=$D&to=$D&by=nope" "${AUTH[@]}")" "400"
+
 echo "Opoziv"
 ID=$(curl -s "$A/proxy-keys" "${AUTH[@]}" | j 0.id)
 curl -s -X DELETE "$A/proxy-keys/$ID" "${AUTH[@]}" -o /dev/null
