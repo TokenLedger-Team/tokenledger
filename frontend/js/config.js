@@ -7,7 +7,7 @@ export const config = {
 
   // true  = frontend koristi lažni backend iz js/mock/ (pravi server nije potreban)
   // false = svi pozivi idu na API_BASE_URL
-  USE_MOCK: true,
+  USE_MOCK: false,
 
   // Podrazumevane vrednosti dok korisnik ne promeni nešto u gornjoj traci.
   DEFAULT_LANG: "sr", // "sr" | "en"

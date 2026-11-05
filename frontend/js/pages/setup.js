@@ -79,6 +79,7 @@ startPage({
         <form class="vform" id="inviteForm">
           <label>${t("set.colName")}<input type="text" name="name" required></label>
           <label>${t("set.colEmail")}<input type="email" name="email" required></label>
+          <label>${t("set.password")}<input type="password" name="password" minlength="8" autocomplete="new-password" required></label>
           <label>${t("set.colRole")}<select name="role">${options(roleItems, "observer")}</select></label>
           <label>${t("set.colTeam")}<select name="teamId">${options(teamItems)}</select></label>
           <button class="vbtn" type="submit">${t("set.invite")}</button>
@@ -109,7 +110,7 @@ startPage({
       toast(t("common.saved"));
     });
     submit("#inviteForm", async (d) => {
-      await api.inviteUser({ name: d.name.trim(), email: d.email.trim(), role: d.role, teamId: d.teamId || null });
+      await api.inviteUser({ name: d.name.trim(), email: d.email.trim(), password: d.password, role: d.role, teamId: d.teamId || null });
       toast(t("set.invited", { email: d.email.trim() }));
     });
 

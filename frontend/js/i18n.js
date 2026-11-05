@@ -296,8 +296,9 @@ const STRINGS = {
   "set.colEmail": ["Email", "Email"],
   "set.colRole": ["Uloga", "Role"],
   "set.noTeam": ["Bez tima", "No team"],
-  "set.invite": ["Pozovi", "Invite"],
-  "set.invited": ["Pozivnica je poslata na {email}.", "Invitation sent to {email}."],
+  "set.invite": ["Dodaj", "Add"],
+  "set.password": ["Početna lozinka (min. 8)", "Initial password (min. 8)"],
+  "set.invited": ["Korisnik {email} je dodat. Prosledi mu početnu lozinku.", "User {email} added. Share the initial password with them."],
   "set.you": ["ti", "you"],
 
   // ---------- Cene ----------
