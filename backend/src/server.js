@@ -13,6 +13,7 @@ import * as teams from "./routes/teams.js";
 import * as users from "./routes/users.js";
 import * as models from "./routes/models.js";
 import * as usage from "./routes/usage.js";
+import * as savings from "./routes/savings.js";
 
 requireSecrets();
 
@@ -39,7 +40,7 @@ api.get("/health", (_req, res) => res.json({ ok: true }));
 api.use("/auth", publicAuth, privateAuth);
 // Sve ispod traži prijavljenog korisnika; prava po ulozi proverava svaka ruta.
 api.use(authenticate);
-for (const m of [org, stats, budgets, teams, users, models, usage]) api.use(m.router);
+for (const m of [org, stats, budgets, teams, users, models, usage, savings]) api.use(m.router);
 app.use("/api", api);
 
 app.use((_req, _res, next) => next(new HttpError(404, "notFound")));
