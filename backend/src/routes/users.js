@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { randomBytes } from "node:crypto";
+import bcrypt from "bcryptjs";
 import { db } from "../db.js";
 import { HttpError } from "../i18n.js";
 import { requireRole } from "../auth.js";
@@ -15,15 +16,20 @@ router.get("/users", (req, res) => {
   res.json(db.prepare("SELECT * FROM users WHERE org_id = ? ORDER BY rowid").all(req.user.org_id).map(userView));
 });
 
-// Pozivnica na email još nije implementirana: korisnik se pravi bez lozinke (ne može da se prijavi).
+// Pozivnica emailom još nije implementirana: admin pri pozivanju zadaje početnu lozinku (min. 8 znakova).
+// Bez lozinke korisnik se pravi, ali ne može da se prijavi dok mu je admin ne postavi.
 router.post("/users", (req, res) => {
   const b = req.body || {};
   const name = String(b.name || "").trim();
   const email = String(b.email || "").trim();
+  const password = b.password === undefined || b.password === "" ? null : String(b.password);
   if (!name || !/^\S+@\S+\.\S+$/.test(email) || !ROLES.includes(b.role) || !teamOk(req.user.org_id, b.teamId)) throw new HttpError(400, "invalid");
+  if (password !== null && (password.length < 8 || password.length > 200)) throw new HttpError(400, "invalid");
   if (db.prepare("SELECT 1 FROM users WHERE email = ?").get(email)) throw new HttpError(409, "exists");
   const id = `u${randomBytes(4).toString("hex")}`;
-  db.prepare("INSERT INTO users (id, org_id, name, email, role, team_id) VALUES (?,?,?,?,?,?)").run(id, req.user.org_id, name, email, b.role, b.teamId || null);
+  db.prepare("INSERT INTO users (id, org_id, name, email, password_hash, role, team_id) VALUES (?,?,?,?,?,?,?)").run(
+    id, req.user.org_id, name, email, password === null ? null : bcrypt.hashSync(password, 10), b.role, b.teamId || null
+  );
   res.status(201).json(userView(db.prepare("SELECT * FROM users WHERE id = ?").get(id)));
 });
 

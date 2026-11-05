@@ -39,6 +39,9 @@ export const openapi = {
   },
   paths: {
     "/auth/login": { post: { tags: ["Auth"], security: [], summary: "Prijava", requestBody: body({ type: "object", required: ["email", "password"], properties: { email: str, password: str, remember: { type: "boolean" } } }), responses: { 200: json({ type: "object", properties: { token: str, user: ref("User") } }), 401: R[401] } } },
+    "/auth/signup": { post: { tags: ["Auth"], security: [], summary: "Registracija: pravi novu organizaciju, korisnik postaje admin", requestBody: body({ type: "object", required: ["name", "company", "email", "password"], properties: { name: str, company: str, email: str, password: { type: "string", minLength: 8 } } }), responses: { 201: json({ type: "object", properties: { token: str, user: ref("User") } }), 400: R[400], 409: R[409] } } },
+    "/auth/forgot-password": { post: { tags: ["Auth"], security: [], summary: "Uvek isti odgovor; slanje emaila još nije implementirano", requestBody: body({ type: "object", required: ["email"], properties: { email: str } }), responses: { 200: json({ type: "object", properties: { ok: { type: "boolean" } } }) } } },
+    "/auth/google": { get: { tags: ["Auth"], security: [], summary: "Google prijava (nije podešena, vraća 501)", responses: { 501: err("Nije podešeno") } } },
     "/auth/logout": { post: { tags: ["Auth"], summary: "Poništava token", responses: { 204: { description: "OK" }, 401: R[401] } } },
     "/auth/me": { get: { tags: ["Auth"], summary: "Trenutni korisnik", responses: { 200: json(ref("User")), 401: R[401] } } },
     "/org": { get: { tags: ["Organizacija"], summary: "Organizacija", responses: { 200: json({ type: "object", properties: { id: str, name: str, proxyUrl: str } }), 401: R[401] } } },
@@ -64,7 +67,7 @@ export const openapi = {
     },
     "/users": {
       get: { tags: ["Timovi i korisnici"], summary: "Korisnici (admin)", responses: { 200: json(arr(ref("User"))), 401: R[401], 403: R[403] } },
-      post: { tags: ["Timovi i korisnici"], summary: "Novi korisnik (admin)", requestBody: body({ type: "object", required: ["name", "email", "role"], properties: { name: str, email: str, role: str, teamId: { ...str, nullable: true } } }), responses: { 201: json(ref("User")), 400: R[400], 401: R[401], 403: R[403], 409: R[409] } },
+      post: { tags: ["Timovi i korisnici"], summary: "Novi korisnik (admin)", requestBody: body({ type: "object", required: ["name", "email", "role"], properties: { name: str, email: str, password: { type: "string", minLength: 8, description: "Početna lozinka; bez nje korisnik ne može da se prijavi" }, role: str, teamId: { ...str, nullable: true } } }), responses: { 201: json(ref("User")), 400: R[400], 401: R[401], 403: R[403], 409: R[409] } },
     },
     "/users/{id}": {
       put: { tags: ["Timovi i korisnici"], summary: "Menja ime, ulogu, tim (admin)", parameters: [idParam("id")], requestBody: body({ type: "object", properties: { name: str, role: str, teamId: { ...str, nullable: true } } }), responses: { 200: json(ref("User")), 400: R[400], 401: R[401], 403: R[403], 404: R[404] } },

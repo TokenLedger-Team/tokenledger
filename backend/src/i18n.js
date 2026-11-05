@@ -9,6 +9,7 @@ const MSG = {
     exists: "Već postoji.",
     invalid: "Neispravni podaci.",
     server: "Greška na serveru.",
+    google: "Google prijava nije podešena na ovom serveru.",
   },
   en: {
     login: "Wrong email or password.",
@@ -19,6 +20,7 @@ const MSG = {
     exists: "Already exists.",
     invalid: "Invalid data.",
     server: "Server error.",
+    google: "Google sign-in is not configured on this server.",
   },
 };
 
