@@ -66,7 +66,7 @@ Demo nalozi posle `npm run seed` (lozinka `demo`): `admin@firma.rs`, `lead@firma
 
 ## Urađeni endpointi
 
-Grupa 1 (MVP): `POST /auth/login`, `POST /auth/logout`, `GET /auth/me`, `GET /stats/summary`, `GET /stats/timeseries`, `GET /stats/breakdown`, `GET /budgets`, `PUT /budgets/:teamId`, `GET/POST /teams`, `GET/POST /users`, `PUT/DELETE /users/:id`, `GET /models`, `PUT /models/:id`, `GET /currencies`, `POST /usage/import`.
+Grupa 1 (MVP): `POST /auth/login`, `POST /auth/logout`, `GET /auth/me`, `GET /stats/summary`, `GET /stats/timeseries`, `GET /stats/breakdown` (`by=team|function|client|model|source`; `source` deli potrošnju na `proxy` i `import`), `GET /budgets`, `PUT /budgets/:teamId`, `GET/POST /teams`, `GET/POST /users`, `PUT/DELETE /users/:id`, `GET /models`, `PUT /models/:id`, `GET /currencies`, `POST /usage/import`.
 
 Grupa 2 (proxy): `GET /org`, `GET /providers`, `POST /providers/:id/keys`, `DELETE /providers/:id/keys/:keyId`, `GET /proxy/status`, `GET /stats/hourly`, `GET /stats/models`.
 

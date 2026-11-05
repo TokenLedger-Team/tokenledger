@@ -27,7 +27,7 @@ router.get("/stats/timeseries", (req, res) => {
 router.get("/stats/breakdown", (req, res) => {
   const { from, to } = range(req);
   const by = req.query.by;
-  if (!["team", "function", "client", "model"].includes(by)) throw new HttpError(400, "invalid");
+  if (!["team", "function", "client", "model", "source"].includes(by)) throw new HttpError(400, "invalid");
   res.json(breakdown(req.user, from, to, by));
 });
 
